@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dosisrechner für Krankentransporte</title>
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-body-tertiary row m-0">
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body"></div>
+        </div>
+    </div>
+    <main class="container py-3 ">
+        <div class="row g-3">
+            <div class="col-12 col-xl-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="card-title mb-5">Dosisrechner für Krankentransporte</h1>
+                        <h2 class="card-title mt-5">Messdaten</h2>
+                        <div class="gap-2 d-flex justify-content-start mb-3">
+                            <input type="file" id="file" accept=".xml" style="display: none;" />
+                            <button class="btn btn-light border border-dark-subtle"
+                                onclick="document.getElementById('file').click();"><i class="bi bi-download pe-1"></i>
+                                Messung
+                                importieren (XML)</button>
+                            <button class="btn btn-light border border-dark-subtle" data-bs-toggle="modal"
+                                data-bs-target="#codeScannerModal"><i class="bi bi-camera pe-1"></i> Code
+                                scannen</button>
+                            <button id="manual-input" class="btn btn-light border border-dark-subtle"><i
+                                    class="bi bi-pencil pe-1"></i>
+                                Manuelle Eingabe</button>
+                        </div>
+                        <form id="doseCalculationForm" class="needs-validation" novalidate>
+                            <div class="accordion accordion mb-3" id="manualAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" data-bs-toggle="collapse"
+                                            data-bs-target="#manualInputCollapse" aria-expanded="false"
+                                            aria-controls="flush-collapseOne" type="button">
+                                            Entlassungswerte
+                                        </button>
+                                    </h2>
+                                    <div id="manualInputCollapse" class="accordion-collapse collapse"
+                                        data-bs-parent="#manualAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col col-12 col-md-6 mb-3">
+                                                    <div class="form-floating">
+                                                        <select class="form-select" id="nuclide"
+                                                            aria-label="Floating label select example">
+                                                            <option selected disabled>Bitte wählen...</option>
+                                                            <option value="4308768">89Sr</option>
+                                                            <option value="3499200">177Lu</option>
+                                                            <option value="630720">131I</option>
+                                                            <option value="600480">223Ra</option>
+                                                            <option value="229824">90Y</option>
+                                                            <option value="8640">99mTc</option>
+                                                            <option value="4518">18F</option>
+                                                            <option value="">Andere / Unbekannt</option>
+                                                        </select>
+                                                        <label for="nuclide">Nuklid</label>
+                                                        <div class="invalid-feedback">
+                                                            Bitte das Nuklid wählen, das zur Behandlung verwendet wurde.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col col-12 col-md-6 mb-3">
+                                                    <div class="input-group ">
+                                                        <div class="form-floating">
+                                                            <input type="number" step="1" min="0" class="form-control"
+                                                                id="half-life" placeholder="" required>
+                                                            <label for="half-life">Halbwertszeit</label>
+                                                            <div class="invalid-feedback">
+                                                                Bitte die Halbwertszeit des verwendeten Nuklids in
+                                                                Sekunden
+                                                                angeben.
+                                                            </div>
+                                                        </div>
+                                                        <span class="input-group-text">s</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <hr class="m-0 mb-3" />
+                                            <div class="row">
+                                                <div class="col col-12 col-md-6 mb-3">
+                                                    <div class="input-group">
+                                                        <div class="form-floating">
+                                                            <input type="number" step=".1" min="0" class="form-control"
+                                                                id="dose-rate" placeholder="" required>
+                                                            <label for="dose-rate">Dosisleistung bei Entlassung</label>
+                                                            <div class="invalid-feedback">
+                                                                Bitte die gemessene Dosisleistung in µSv/h angeben.
+                                                            </div>
+                                                        </div>
+                                                        <span class="input-group-text">&micro;Sv/h</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col col-12 col-md-6 mb-3">
+                                                    <div class="input-group">
+                                                        <div class="form-floating">
+                                                            <input type="number" step="1" min="0" value="200"
+                                                                class="form-control" id="measure-distance"
+                                                                placeholder="" required>
+                                                            <label for="measure-distance">Gemessen auf
+                                                                Entfernung</label>
+                                                            <div class="invalid-feedback">
+                                                                Bitte die Entfernung angeben, aus der gemessen wurde.
+                                                            </div>
+                                                        </div>
+                                                        <span class="input-group-text">cm</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <hr class="m-0 mb-3" />
+                                            <div class="row">
+                                                <div class="col">
+                                                    <div class="form-floating">
+                                                        <input type="date" class="form-control" id="release-date"
+                                                            required>
+                                                        <label for="release-date">Entlassungsdatum</label>
+                                                        <div class="invalid-feedback">
+                                                            Bitte das Datum angeben, wann der Fahrgast entlassen wurde.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="form-floating">
+                                                        <input type="time" class="form-control" id="release-time"
+                                                            required>
+                                                        <label for="release-time">Entlassungsuhrzeit</label>
+                                                        <div class="invalid-feedback">
+                                                            Bitte die Uhrzeit angeben, wann der Fahrgast entlassen
+                                                            wurde.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <h2 class="card-title">Transport</h2>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-floating mb-3">
+                                        <input type="date" class="form-control" id="pick-up-date" required>
+                                        <label for="pick-up-date">Eingestiegen (Datum)</label>
+                                        <div class="invalid-feedback">
+                                            Bitte das Datum angeben, wann der Fahrgast eingestiegen ist.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-floating mb-3">
+                                        <input type="time" class="form-control" id="pick-up-time" required>
+                                        <label for="pick-up-time">Eingestiegen (Uhrzeit)</label>
+                                        <div class="invalid-feedback">
+                                            Bitte die Uhrzeit angeben, wann der Fahrgast eingestiegen ist.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-floating mb-3">
+                                        <input type="date" class="form-control" id="drop-off-date" required>
+                                        <label for="drop-off-date">Ausgestiegen (Datum)</label>
+                                        <div class="invalid-feedback">
+                                            Bitte das Datum angeben, wann der Fahrgast ausgestiegen ist.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-floating mb-3">
+                                        <input type="time" class="form-control" id="drop-off-time" required>
+                                        <label for="drop-off-time">Ausgestiegen (Uhrzeit)</label>
+                                        <div class="invalid-feedback">
+                                            Bitte die Uhrzeit angeben, wann der Fahrgast ausgestiegen ist.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="seat" aria-label="Seat" required>
+                                    <option value="" selected disabled>Bitte wählen...</option>
+                                    <option value="30">Beifahrersitz</option>
+                                    <option value="70">Hinten links</option>
+                                    <option value="85">Hinten mitte</option>
+                                    <option value="100">Hinten rechts</option>
+                                    <option value="150">Heck</option>
+                                </select>
+                                <label for="seat">Sitzplatz Fahrgast</label>
+                                <div class="invalid-feedback">
+                                    Bitte den Sitzplatz des Fahrgasts wählen.
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2 mb-2">
+                                <button class="btn btn-primary btn-lg" type="submit"><i
+                                        class="bi bi-calculator-fill pe-2"></i>Dosis berechnen</button>
+                            </div>
+                        </form>
+                        <div id="result" class="my-5 collapse">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Expositionszeit:</th>
+                                        <td><span id="result-time"></span> min.</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Strahlendosis:</th>
+                                        <td><span id="result-dose"></span> &micro;Sv</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="d-flex justify-content-around mt-5 gap-2">
+                                <button class="btn btn-light" id="form-reset"><i
+                                        class="bi bi-arrow-counterclockwise pe-2"></i> Zurücksetzen</button>
+                                <button class="btn btn-primary" id="save"><i class="bi-floppy-fill pe-2"></i>
+                                    Speichern</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-xl-6">
+                <div class="card">
+                    <div class="card-body">
+                        <canvas id="chart"></canvas>
+                    </div>
+                    <div class="alert alert-warning rounded-0 fw-bold text-center fs-5 d-none" id="dose-limit-soon"
+                        role="alert">
+                        <i class="bi bi-exclamation-triangle-fill pe-2"></i>Strahlendosis-Limit bald erreicht!
+                    </div>
+                    <div class="alert alert-danger rounded-0 fw-bold text-center fs-5 d-none" id="dose-limit-exceeded"
+                        role="alert">
+                        <i class="bi bi-exclamation-triangle-fill pe-2"></i>Strahlendosis-Limit überschritten!
+                    </div>
+                    <div class="container p-4">
+                        <div class="row align-items-start">
+                            <div class="col-12 col-sm-6 p-4 text-center">
+                                <h3>Strahlendosis-Level</h3>
+                                <div id="dose-progress" class="progress" role="progressbar" aria-label="dose-level"
+                                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar overflow-visible" style="width: 0%;"
+                                        id="dose-progress-bar">
+                                    </div>
+                                </div>
+                                <span id="dose-percentage">0 %</span>
+                            </div>
+                            <div class="col-12 col-sm-6 p-4 text-center">
+                                <div class="col">
+                                    <h3>Strahlendosis</h3>
+                                    <p class="fs-1"><span id="dose-total">0</span> <small>µSv</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion accordion-flush mb-1" id="accordion-trips">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#collapse-trips" aria-expanded="false"
+                                    aria-controls="collapse-trips">
+                                    Fahrten (<span id="trip-count">0</span>)
+                                </button>
+                            </h2>
+                            <div id="collapse-trips" class="accordion-collapse collapse show "
+                                data-bs-parent="#accordion-trips">
+                                <div class="accordion-body">
+                                    <table class="table align-middle table-striped table-hover">
+                                        <tbody id="trips-list">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">Start</th>
+                                                    <th scope="col">Ende</th>
+                                                    <th scope="col">Dosis</th>
+                                                    <th scope="col"></th>
+                                                </tr>
+                                            </thead>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gap-2 d-flex p-3 justify-content-end">
+                        <input type="file" id="import" accept=".csv" style="display: none;" />
+                        <button class="btn btn-light border border-dark-subtle" type="button"
+                            onclick="document.getElementById('import').click();"><i class="bi bi-download pe-1"></i>
+                            Fahrten importieren (CSV)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div class="modal fade" id="codeScannerModal" tabindex="-1" aria-labelledby="codeScannerModal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4">
+                <div id="awaiting-camera-access" class="d-flex align-items-center flex-column">
+                    <p class="text-center">Warten auf Kamerazugriff</p>
+                    <div class="spinner-border text-secondary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <video class="d-none" width="100%" autoplay="true" id="video"></video>
+                <span id="no-camera-access" class="text-center d-none"><i class="bi-x-lg pe-1 text-danger"></i>Kein
+                    Kamerazugriff</span>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="./js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./js/zxing.min.js"></script>
+    <script type="text/javascript" src="./js/chart.min.js"></script>
+    <script type="text/javascript" src="./js/app.js"></script>
+</body>
+
+</html>
